@@ -1,5 +1,12 @@
 import tweepy
-from reservoir_sampling_stream_listener import ReservoirSamplingStreamListener
+
+class ReservoirSamplingStreamListener(tweepy.StreamListener):
+    def on_status(self, status):
+        print(status.text)
+
+    def on_error(self, status_code):
+        if status_code == 420:
+            return False
 
 CONSUMER_KEY = "XXXXXXXXX"
 CONSUMER_SECRET = "XXXXXXXXX"
