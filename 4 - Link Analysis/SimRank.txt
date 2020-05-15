@@ -1,0 +1,16 @@
+$ spark-shell
+
+import org.apache.spark.graphx.GraphLoader
+val graph = GraphLoader.edgeListFile(sc, "/home/tank/IIITD/BDA4/soc-Epinions1.txt")
+val pageRankGraph = graph.pageRank(0.000001, 0.2)
+var srcVertex = pageRankGraph.vertices.takeOrdered(1)(Ordering[Double].reverse.on(x=>x._2))(0)
+val simRankGraph = graph.personalizedPageRank(srcVertex, 0.000001, 0.2)
+simRankGraph.vertices.takeOrdered(5)(Ordering[Double].reverse.on(x=>x._2)).foreach(println)
+
+Output:
+(18,0.2230557454888009)
+(118,0.006985820610775625)
+(790,0.006229070859681339)
+(136,0.006127037415977047)
+(1191,0.005895183304455649)
+(128,0.005884577643637246)

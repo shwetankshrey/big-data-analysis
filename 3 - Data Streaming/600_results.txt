@@ -1,0 +1,18 @@
+
+
+
+time elapsed:601.0093235969543
+number of users:18787
+moment:26549
+
+
+
+time elapsed:601.019672870636
+number of users:16740
+moment:23415
+
+
+
+time elapsed:601.0503189563751
+number of users:16741
+moment:23417

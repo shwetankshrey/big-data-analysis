@@ -1,0 +1,42 @@
+
+
+
+time elapsed:1201.0360403060913
+number of users:34095
+moment:54156
+
+
+
+time elapsed:1201.061368227005
+number of users:34096
+moment:54158
+
+
+
+time elapsed:1201.0287051200867
+number of users:32054
+moment:50420
+
+
+
+time elapsed:1201.2911236286163
+number of users:34423
+moment:53410
+
+
+
+time elapsed:1201.0852267742157
+number of users:28655
+moment:43544
+
+
+
+time elapsed:1201.0743339061737
+number of users:24473
+moment:37575
+
+
+
+time elapsed:1201.0538847446442
+number of users:21108
+moment:32067

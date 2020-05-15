@@ -1,0 +1,64 @@
+$ spark-shell --packages graphframes:graphframes:0.8.0-spark2.4-s_2.11
+
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.functions._
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.graphx.{Graph, GraphLoader, VertexRDD, Edge => GXEdge}
+import org.apache.spark.sql.types.{IntegerType, LongType}
+import org.graphframes.GraphFrame
+import scala.math.sqrt
+
+case class VertexAttr(srcId: Long, authScore: Double, hubScore:Double)
+case class EdgeAttr(srcId: Long, dstId: Long)
+case class HitsMsg(authScore:Double, hubScore:Double)
+def reducer(a:HitsMsg,b:HitsMsg):HitsMsg = HitsMsg(a.authScore + b.authScore, a.hubScore + b.hubScore)
+
+val graph = GraphLoader.edgeListFile(sc, "/home/tank/IIITD/BDA4/soc-Epinions1.txt")
+val gx1: Graph[VertexAttr, Int] = graph.mapVertices { case (id, attr) =>
+    VertexAttr(id, authScore = 1.0, hubScore = 1.0)
+}
+val extractEdgeAttr: (GXEdge[Int] => EdgeAttr) = { e =>
+    val src = e.srcId
+    val dst = e.dstId
+    EdgeAttr(src, dst)
+}
+var gx: Graph[VertexAttr, EdgeAttr] = gx1.mapEdges(extractEdgeAttr)
+
+for (iter <- Range(1,50)) {
+    val msgs: VertexRDD[HitsMsg] = gx.aggregateMessages(
+        ctx =>
+        {
+            ctx.sendToDst(HitsMsg(0.0,ctx.srcAttr.hubScore));
+            ctx.sendToSrc(HitsMsg(ctx.dstAttr.authScore,0.0))
+        }, reducer)
+    gx = gx.outerJoinVertices(msgs) {
+        case (vID, vAttr, optMsg) => {
+            val msg = optMsg.getOrElse(HitsMsg(1.0, 1.0))
+            VertexAttr(vAttr.srcId, if (msg.authScore == 0.0) 1.0 else msg.authScore , if (msg.hubScore == 0.0) 1.0 else msg.hubScore)
+        }
+    }
+    var sum_auth : Double = 0
+    var sum_hub : Double = 0
+    gx.vertices.collect.foreach {
+        x => 
+        {
+            sum_auth += (x._2.authScore * x._2.authScore)
+            sum_hub += (x._2.hubScore * x._2.hubScore)
+        }       
+    }
+    var sqrt_sum_auth : Double = sqrt(sum_auth)
+    var sqrt_sum_hub : Double = sqrt(sum_hub)
+    gx = gx.mapVertices { case (_, vrtx) => 
+        VertexAttr(vrtx.srcId, (vrtx.authScore / sqrt_sum_auth), (vrtx.hubScore / sqrt_sum_hub))
+    }
+}
+
+var hitsGraph = gx.mapVertices((_, attr) => (attr.authScore, attr.hubScore)).mapEdges( _ => ())
+hitsGraph.vertices.takeOrdered(5)(Ordering[Double].reverse.on(x=>x._2._2)).foreach(println)
+
+Output:
+(18,(7.833363555459924E-4,0.018565576675807095))
+(737,(0.006285361753972609,0.01187829564189329))
+(401,(0.008135157082381212,0.008682569167503176))
+(118,(0.002199101897455186,0.00853166257241703))
+(27,(0.01099781334330978,0.008427527620082158))
